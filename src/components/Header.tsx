@@ -12,15 +12,19 @@ import {
   Sun,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useData } from "../context/DataContext";
 import { APP_NAME } from "../lib/constants";
 import {
-  initOneSignal,
+  disableOneSignalPush,
+  enableOneSignalPushFromUserGesture,
+  isBellGreen,
   isOneSignalConfigured,
-  requestOneSignalPushPermission,
+  readOneSignalBellState,
+  watchOneSignalBellState,
+  type OneSignalBellState,
 } from "../lib/onesignal";
 import { requestNotificationPermission } from "../lib/notifications";
 import { cx } from "../lib/utils";
@@ -47,22 +51,64 @@ export function Header({
   const { signOut, user, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { syncing, forceSync, lastSyncError, pendingWrites } = useData();
-  const [notifPerm, setNotifPerm] = useState<NotificationPermission>(
-    typeof Notification !== "undefined" ? Notification.permission : "denied",
-  );
+  const [bell, setBell] = useState<OneSignalBellState>(() => ({
+    nativePerm:
+      typeof Notification !== "undefined" ? Notification.permission : "denied",
+    optedIn: null,
+  }));
 
-  useEffect(() => {
-    if (typeof Notification === "undefined") return;
-    setNotifPerm(Notification.permission);
+  const refreshBell = useCallback(async () => {
+    setBell(await readOneSignalBellState());
   }, []);
 
-  const toggleNotif = async () => {
+  useEffect(() => {
+    void refreshBell();
+  }, [user?.id, refreshBell]);
+
+  useEffect(() => {
+    if (!isOneSignalConfigured()) return;
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    void watchOneSignalBellState(() => {
+      if (!cancelled) void refreshBell();
+    }).then((unsub) => {
+      if (cancelled) unsub();
+      else cleanup = unsub;
+    });
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [refreshBell]);
+
+  const bellOn = isBellGreen(bell);
+
+  const onBellClick = async () => {
     if (isOneSignalConfigured()) {
-      await initOneSignal();
-      await requestOneSignalPushPermission();
+      if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+        window.alert(
+          "Notifications are blocked for this site. Open your browser’s site settings, allow notifications for this page, then try again.",
+        );
+        return;
+      }
+      const state = await readOneSignalBellState();
+      if (isBellGreen(state)) {
+        await disableOneSignalPush();
+      } else {
+        await enableOneSignalPushFromUserGesture();
+      }
+      await refreshBell();
+      return;
     }
-    const perm = await requestNotificationPermission();
-    setNotifPerm(perm);
+
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      window.alert(
+        "To turn off deadline reminders, change notification permission in your browser’s site settings for this page.",
+      );
+      return;
+    }
+    await requestNotificationPermission();
+    await refreshBell();
   };
 
   return (
@@ -124,19 +170,19 @@ export function Header({
               )}
             </button>
             <button
-              onClick={toggleNotif}
+              onClick={() => void onBellClick()}
               title={
-                notifPerm === "granted"
-                  ? isOneSignalConfigured()
-                    ? "Notifications on (deadlines + team alerts)"
-                    : "Notifications enabled"
-                  : isOneSignalConfigured()
-                    ? "Enable notifications (deadlines + team alerts)"
-                    : "Enable notifications"
+                isOneSignalConfigured()
+                  ? bellOn
+                    ? "Push on (tap to turn off team alerts on this device)"
+                    : "Push off — tap to allow notifications and register this device"
+                  : bellOn
+                    ? "Deadline reminders on (change in browser settings to off)"
+                    : "Enable deadline reminders"
               }
               className="tm-btn-ghost !px-3 !py-3"
             >
-              {notifPerm === "granted" ? (
+              {bellOn ? (
                 <Bell className="w-5 h-5 text-green-500" />
               ) : (
                 <BellOff className="w-5 h-5" />

@@ -130,11 +130,18 @@ Deno.serve(async (req) => {
       }),
     });
 
+    const osText = await osRes.text();
+    let osJson: Record<string, unknown> = {};
+    try {
+      osJson = JSON.parse(osText) as Record<string, unknown>;
+    } catch {
+      osJson = { raw: osText };
+    }
+
     if (!osRes.ok) {
-      const detail = await osRes.text();
-      console.error("[notify-admins-new-task] OneSignal:", osRes.status, detail);
+      console.error("[notify-admins-new-task] OneSignal:", osRes.status, osText);
       return new Response(
-        JSON.stringify({ error: "OneSignal request failed", detail }),
+        JSON.stringify({ error: "OneSignal request failed", detail: osJson }),
         {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -142,9 +149,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const recipients = osJson["recipients"];
+    const osErrors = osJson["errors"];
+    const id = osJson["id"];
+
+    // Surfaces in net._http_response: recipients === 0 means no subscribed devices
+    // for include_external_user_ids (admin must open app + allow push + OneSignal.login).
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        notified_admin_ids: adminIds,
+        onesignal: { id, recipients, errors: osErrors },
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return new Response(JSON.stringify({ error: msg }), {

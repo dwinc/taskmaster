@@ -229,7 +229,7 @@ set search_path = public
 as $$
 begin
   if tg_op = 'INSERT' then
-    new.created_by := auth.uid();
+    new.created_by := coalesce(new.created_by, auth.uid());
   elsif tg_op = 'UPDATE' then
     new.created_by := old.created_by;
   end if;
