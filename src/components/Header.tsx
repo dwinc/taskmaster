@@ -95,7 +95,7 @@ export function Header({
       if (isBellGreen(state)) {
         await disableOneSignalPush();
       } else {
-        await enableOneSignalPushFromUserGesture();
+        await enableOneSignalPushFromUserGesture(user?.id ?? null);
       }
       await refreshBell();
       return;
@@ -208,6 +208,20 @@ export function Header({
             </button>
           </div>
         </div>
+
+        {isAdmin && !isOneSignalConfigured() && (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300/90">
+            Team push is not in this build: set{" "}
+            <code className="rounded bg-neutral-200/80 px-1 py-0.5 text-[11px] dark:bg-neutral-800">
+              VITE_ONESIGNAL_APP_ID
+            </code>{" "}
+            in your host&apos;s build environment and redeploy (Vite bakes it in at{" "}
+            <code className="rounded bg-neutral-200/80 px-1 py-0.5 text-[11px] dark:bg-neutral-800">
+              npm run build
+            </code>
+            ).
+          </p>
+        )}
 
         {/* Sync status banner — only visible when something needs attention */}
         {(pendingWrites > 0 || lastSyncError) && (

@@ -4,6 +4,11 @@ const APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID?.trim();
 
 let initPromise: Promise<void> | null = null;
 
+function serviceWorkerUrl(): string {
+  const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+  return `${base}OneSignalSDKWorker.js`;
+}
+
 export function isOneSignalConfigured(): boolean {
   return Boolean(APP_ID);
 }
@@ -12,16 +17,44 @@ export function isOneSignalConfigured(): boolean {
  * Load OneSignal once. Safe under React StrictMode (second render reuses the same promise).
  */
 export async function initOneSignal(): Promise<void> {
-  if (!APP_ID) return;
+  if (!APP_ID) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        "[taskmaster] OneSignal: VITE_ONESIGNAL_APP_ID is unset — SDK will not load (no cdn.onesignal.com requests).",
+      );
+    }
+    return;
+  }
   if (!initPromise) {
-    const base = import.meta.env.BASE_URL;
-    const swPath = `${base}OneSignalSDKWorker.js`;
+    if (import.meta.env.DEV) {
+      console.info(
+        "[taskmaster] OneSignal: loading SDK (watch Network → JS for cdn.onesignal.com/…/OneSignalSDK.page.js).",
+      );
+    }
+    const swPath = serviceWorkerUrl();
     initPromise = OneSignal.init({
       appId: APP_ID,
       allowLocalhostAsSecureOrigin: import.meta.env.DEV,
       serviceWorkerPath: swPath,
       serviceWorkerUpdaterPath: swPath,
-    });
+    })
+      .then(async () => {
+        if (import.meta.env.DEV) {
+          console.info(
+            "[taskmaster] OneSignal: init finished (you should also see calls to api.onesignal.com after login/opt-in).",
+          );
+          try {
+            OneSignal.Debug.setLogLevel("warn");
+          } catch {
+            /* ignore */
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        initPromise = null;
+        console.error("[taskmaster] OneSignal init failed:", err);
+        throw err;
+      });
   }
   await initPromise;
 }
@@ -65,11 +98,16 @@ export async function readOneSignalBellState(): Promise<OneSignalBellState> {
 
 /**
  * Register for OneSignal dashboard + API targeting: browser permission + push subscription.
- * Call after OneSignal.login (AuthContext) so External user id is set.
+ * Pass `externalId` (Supabase user id) so login runs before opt-in (avoids race with AuthContext).
  */
-export async function enableOneSignalPushFromUserGesture(): Promise<void> {
+export async function enableOneSignalPushFromUserGesture(
+  externalId: string | null,
+): Promise<void> {
   if (!APP_ID) return;
   await initOneSignal();
+  if (externalId) {
+    await OneSignal.login(externalId);
+  }
   const granted = await OneSignal.Notifications.requestPermission();
   if (!granted) return;
   await OneSignal.User.PushSubscription.optIn();
