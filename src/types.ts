@@ -25,6 +25,8 @@ export interface Task {
   deadline: string | null; // ISO timestamp
   position: number;
   user_name: string;
+  /** Set by DB trigger; used for admin push when a member creates a task. */
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;

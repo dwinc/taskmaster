@@ -17,6 +17,11 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useData } from "../context/DataContext";
 import { APP_NAME } from "../lib/constants";
+import {
+  initOneSignal,
+  isOneSignalConfigured,
+  requestOneSignalPushPermission,
+} from "../lib/onesignal";
 import { requestNotificationPermission } from "../lib/notifications";
 import { cx } from "../lib/utils";
 
@@ -52,6 +57,10 @@ export function Header({
   }, []);
 
   const toggleNotif = async () => {
+    if (isOneSignalConfigured()) {
+      await initOneSignal();
+      await requestOneSignalPushPermission();
+    }
     const perm = await requestNotificationPermission();
     setNotifPerm(perm);
   };
@@ -118,8 +127,12 @@ export function Header({
               onClick={toggleNotif}
               title={
                 notifPerm === "granted"
-                  ? "Notifications enabled"
-                  : "Enable notifications"
+                  ? isOneSignalConfigured()
+                    ? "Notifications on (deadlines + team alerts)"
+                    : "Notifications enabled"
+                  : isOneSignalConfigured()
+                    ? "Enable notifications (deadlines + team alerts)"
+                    : "Enable notifications"
               }
               className="tm-btn-ghost !px-3 !py-3"
             >

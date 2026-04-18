@@ -8,6 +8,10 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
+import {
+  isOneSignalConfigured,
+  setOneSignalExternalUser,
+} from "../lib/onesignal";
 import { supabase } from "../lib/supabase";
 import type { AppUser } from "../lib/users";
 
@@ -136,6 +140,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [session?.user?.id, loadProfile, loadMemberGrants]);
 
+  useEffect(() => {
+    if (!isOneSignalConfigured()) return;
+    const uid = session?.user?.id;
+    if (!uid) {
+      void setOneSignalExternalUser(null);
+      return;
+    }
+    void setOneSignalExternalUser(uid);
+  }, [session?.user?.id]);
+
   const user = useMemo(() => {
     if (!session?.user || !profileRow) return null;
     return toAppUser(session, profileRow);
@@ -153,6 +167,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    if (isOneSignalConfigured()) {
+      await setOneSignalExternalUser(null);
+    }
     await supabase.auth.signOut();
     setProfileRow(null);
     setAllowedCategoryIds(null);

@@ -215,3 +215,30 @@ create policy "tasks_delete"
       where u.user_id = auth.uid() and u.category_id = tasks.category_id
     )
   );
+
+-- ---------- task creator (OneSignal admin alerts) ----------
+-- Webhook + Edge Function use created_by to detect member inserts.
+alter table public.tasks
+  add column if not exists created_by uuid references auth.users (id) on delete set null;
+
+create or replace function public.tasks_lock_created_by()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.created_by := auth.uid();
+  elsif tg_op = 'UPDATE' then
+    new.created_by := old.created_by;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists tasks_lock_created_by_trg on public.tasks;
+create trigger tasks_lock_created_by_trg
+  before insert or update on public.tasks
+  for each row
+  execute function public.tasks_lock_created_by();

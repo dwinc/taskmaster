@@ -3,3 +3,7 @@
 
 [functions.invite-user]
 verify_jwt = true
+
+# Called by Database Webhooks (no end-user JWT).
+[functions.notify-admins-new-task]
+verify_jwt = false
