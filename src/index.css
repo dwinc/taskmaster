@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #ffffff;
+  color: #0b0b0d;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+html.dark body {
+  background: #0b0b0d;
+  color: #ececee;
+}
+
+/* Disable the ugly default blue tap highlight on touch devices. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scrollbars — subtle */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 130, 0.25);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 130, 0.45);
+}
+
+/* Utility: large-touch button base */
+@layer components {
+  .tm-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+      px-5 py-3 text-base font-medium transition-colors
+      select-none;
+  }
+  .tm-btn-primary {
+    @apply tm-btn bg-neutral-900 text-white hover:bg-neutral-800
+      dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200;
+  }
+  .tm-btn-subtle {
+    @apply tm-btn bg-neutral-100 text-neutral-800 hover:bg-neutral-200
+      dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700;
+  }
+  .tm-btn-ghost {
+    @apply tm-btn text-neutral-600 hover:bg-neutral-100
+      dark:text-neutral-400 dark:hover:bg-neutral-800;
+  }
+  .tm-input {
+    @apply w-full rounded-xl border border-neutral-200 bg-white
+      px-4 py-3 text-base text-neutral-900 outline-none
+      focus:border-neutral-400
+      dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100
+      dark:focus:border-neutral-500;
+  }
+  .tm-card {
+    @apply rounded-2xl border border-neutral-200 bg-white shadow-card
+      dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-card-dark;
+  }
+}
+
+/* Large checkbox hit target for touch */
+.tm-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 2px solid rgba(120, 120, 130, 0.55);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+.tm-check:hover {
+  border-color: rgba(120, 120, 130, 0.85);
+}
+.tm-check[data-checked="true"] {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+.tm-modal-backdrop {
+  background: rgba(12, 12, 16, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+/* Fade-in on mount */
+@keyframes tm-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.tm-fade {
+  animation: tm-fade-in 160ms ease-out both;
+}

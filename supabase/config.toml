@@ -1,0 +1,5 @@
+# Minimal config for Edge Functions. Link project: `supabase link --project-ref <ref>`
+# Deploy invite flow: `supabase functions deploy invite-user --no-verify-jwt` is WRONG — use verify JWT.
+
+[functions.invite-user]
+verify_jwt = true
