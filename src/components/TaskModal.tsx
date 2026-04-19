@@ -87,7 +87,27 @@ export function TaskModal({ open, onClose, task, defaultCategoryId }: Props) {
     setTagInput("");
     setSubtaskInput("");
     setTab("details");
-  }, [open, task, defaultCategoryId, categories, selectableCategories]);
+    // Intentionally omit categories / selectableCategories: they get new
+    // references on every remote merge; re-running would wipe in-progress new tasks.
+  }, [open, task, defaultCategoryId]);
+
+  // Categories may load after the modal opens — set a default once if still empty.
+  useEffect(() => {
+    if (!open || task) return;
+    if (categoryId) return;
+    const fallback =
+      defaultCategoryId ??
+      selectableCategories[0]?.id ??
+      categories[0]?.id;
+    if (fallback) setCategoryId(fallback);
+  }, [
+    open,
+    task,
+    categoryId,
+    defaultCategoryId,
+    selectableCategories,
+    categories,
+  ]);
 
   // --- Tag helpers ---------------------------------------------------
   const addTag = (raw: string) => {
@@ -261,7 +281,7 @@ export function TaskModal({ open, onClose, task, defaultCategoryId }: Props) {
               />
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <label className="block">
                 <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   Category
@@ -344,7 +364,7 @@ export function TaskModal({ open, onClose, task, defaultCategoryId }: Props) {
               <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 Status
               </span>
-              <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
                 {STATUS_OPTIONS.map((s) => {
                   const meta = STATUS_META[s];
                   const active = s === status;

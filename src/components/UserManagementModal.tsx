@@ -147,7 +147,7 @@ export function UserManagementModal({ open, onClose }: Props) {
             link. Requires the <code className="text-xs">invite-user</code> Edge Function
             deployed to this Supabase project.
           </p>
-          <form onSubmit={onInvite} className="flex flex-col sm:flex-row gap-2">
+          <form onSubmit={onInvite} className="flex flex-col md:flex-row gap-2">
             <input
               type="email"
               required
@@ -161,7 +161,7 @@ export function UserManagementModal({ open, onClose }: Props) {
               placeholder="Display name"
               value={inviteName}
               onChange={(e) => setInviteName(e.target.value)}
-              className="tm-input flex-1 sm:max-w-[200px]"
+              className="tm-input flex-1 md:max-w-[200px]"
             />
             <button
               type="submit"

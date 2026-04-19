@@ -159,9 +159,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(id);
   }, [authed]);
 
-  // Periodic remote pull: every 60 seconds, merge in any remote changes.
-  // Skips when the tab is hidden or a sync is already in flight, and also
-  // fires immediately when the tab becomes visible again so we catch up.
+  // Remote pull when the tab becomes visible (no periodic timer — a timed
+  // merge was resetting UI that depended on context identity, e.g. the new-task form).
   useEffect(() => {
     if (!authed) return;
     const syncingRef = { current: false };
@@ -181,13 +180,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         syncingRef.current = false;
       }
     };
-    const id = window.setInterval(() => void pull(), 60 * 1000);
     const onVisibility = () => {
       if (!document.hidden) void pull();
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [authed, refreshPending]);

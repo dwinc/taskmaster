@@ -27,11 +27,11 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
 
   return (
     <div
-      className="fixed inset-0 z-50 tm-modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-6"
+      className="fixed inset-0 z-50 tm-modal-backdrop flex items-end md:items-center justify-center p-0 md:p-6"
       onClick={onClose}
     >
       <div
-        className={`tm-card w-full ${maxWidth} tm-fade rounded-b-none sm:rounded-2xl max-h-[90vh] flex flex-col`}
+        className={`tm-card w-full ${maxWidth} tm-fade rounded-b-none md:rounded-2xl max-h-[90vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-200 dark:border-neutral-800">

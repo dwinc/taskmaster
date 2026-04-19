@@ -103,7 +103,7 @@ export function CategoryModal({ open, onClose, category }: Props) {
           <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
             Icon
           </span>
-          <div className="mt-2 grid grid-cols-7 sm:grid-cols-10 gap-2">
+          <div className="mt-2 grid grid-cols-7 md:grid-cols-10 gap-2">
             {CATEGORY_ICONS.map((name) => {
               const active = name === icon;
               return (

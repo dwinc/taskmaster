@@ -115,7 +115,7 @@ export function CategorySection({
               strokeWidth={2.2}
             />
           </span>
-          <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white truncate">
+          <h2 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white truncate">
             {category.name}
           </h2>
           <span className="text-sm font-medium text-neutral-400 dark:text-neutral-500">

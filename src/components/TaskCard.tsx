@@ -38,47 +38,21 @@ export function TaskCard({
   return (
     <div
       className={cx(
-        "tm-card tm-fade flex items-start gap-4 p-4 sm:p-5 transition-transform",
+        "tm-card tm-fade flex items-center gap-1 md:gap-1.5 pl-[18px] md:pl-2.5 pr-[15px] py-3 transition-transform",
         dragging && "opacity-60 scale-[1.01] shadow-lg",
         isDone && "opacity-60",
       )}
     >
-      {/* Drag handle */}
       {dragHandleProps && (
         <button
           {...dragHandleProps}
-          className="flex-shrink-0 text-neutral-300 dark:text-neutral-700 hover:text-neutral-500 dark:hover:text-neutral-400 touch-none pt-1 -ml-1"
+          type="button"
+          className="hidden md:inline-flex flex-shrink-0 items-center justify-center p-0.5 -ml-0.5 text-neutral-300 dark:text-neutral-700 hover:text-neutral-500 dark:hover:text-neutral-400 touch-none leading-none"
           aria-label="Drag"
         >
-          <GripVertical className="w-5 h-5" />
+          <GripVertical className="w-4 h-4" strokeWidth={2} />
         </button>
       )}
-
-      {/* Checkbox */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleDone();
-        }}
-        className="tm-check mt-0.5"
-        data-checked={isDone}
-        style={isDone ? { background: categoryColor, borderColor: categoryColor } : undefined}
-        aria-label="Toggle done"
-      >
-        {isDone && (
-          <svg
-            viewBox="0 0 20 20"
-            className="w-4 h-4 text-white"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 10.5l4 4 8-9" />
-          </svg>
-        )}
-      </button>
 
       {/* Body */}
       <div
@@ -88,7 +62,7 @@ export function TaskCard({
         <div className="flex items-start gap-3 justify-between">
           <h3
             className={cx(
-              "text-lg font-semibold leading-snug text-neutral-900 dark:text-neutral-100 min-w-0",
+              "text-base font-semibold leading-snug md:text-lg text-neutral-900 dark:text-neutral-100 min-w-0",
               isDone && "line-through text-neutral-500",
             )}
           >
@@ -102,7 +76,7 @@ export function TaskCard({
                   <span
                     key={tag}
                     className={cx(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase",
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase md:text-[11px]",
                       isDone && "opacity-60",
                     )}
                     style={{
@@ -121,7 +95,7 @@ export function TaskCard({
         {task.description && (
           <p
             className={cx(
-              "mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400 line-clamp-2",
+              "mt-1.5 text-xs leading-relaxed md:text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2",
               isDone && "line-through",
             )}
           >
@@ -134,7 +108,7 @@ export function TaskCard({
           {/* Status pill (hidden for not_done — visual noise) */}
           {(isInProgress || isBlocked) && !isDone && (
             <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium md:text-xs"
               style={{
                 backgroundColor: hexAlpha(statusMeta.color, 0.12),
                 color: statusMeta.color,
@@ -151,7 +125,7 @@ export function TaskCard({
           {task.subtasks.length > 0 && (
             <span
               className={cx(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium md:text-xs bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
                 task.subtasks.every((s) => s.done) &&
                   "!text-green-600 dark:!text-green-400",
               )}
@@ -166,7 +140,7 @@ export function TaskCard({
           {task.deadline && (
             <span
               className={cx(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium md:text-xs",
                 overdue
                   ? "bg-red-500/10 text-red-600 dark:text-red-400"
                   : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
@@ -185,6 +159,32 @@ export function TaskCard({
           )}
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleDone();
+        }}
+        className="tm-check flex-shrink-0"
+        data-checked={isDone}
+        style={isDone ? { background: categoryColor, borderColor: categoryColor } : undefined}
+        aria-label="Toggle done"
+      >
+        {isDone && (
+          <svg
+            viewBox="0 0 20 20"
+            className="w-4 h-4 text-white"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 10.5l4 4 8-9" />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }
