@@ -3,12 +3,14 @@ import {
   Bell,
   BellOff,
   CheckCircle2,
+  LayoutDashboard,
   LogOut,
   Menu,
   Moon,
   Plus,
   RefreshCw,
   Search,
+  StickyNote,
   Sun,
   Users,
   X,
@@ -32,6 +34,8 @@ import { requestNotificationPermission } from "../lib/notifications";
 import { cx } from "../lib/utils";
 
 interface Props {
+  surface: "tasks" | "notes";
+  onChangeSurface: (s: "tasks" | "notes") => void;
   view: "active" | "completed";
   onChangeView: (v: "active" | "completed") => void;
   search: string;
@@ -42,6 +46,8 @@ interface Props {
 }
 
 export function Header({
+  surface,
+  onChangeSurface,
   view,
   onChangeView,
   search,
@@ -139,27 +145,72 @@ export function Header({
   const toolbarIconBtn =
     "tm-btn-ghost !px-3 !py-2.5 md:!py-3";
 
-  const renderViewToggle = () => (
-    <button
-      type="button"
-      onClick={() => onChangeView(view === "active" ? "completed" : "active")}
-      className={cx(
-        toolbarIconBtn,
-        view === "completed" &&
-          "!bg-neutral-200/90 dark:!bg-neutral-800 text-green-600 dark:text-green-400",
-      )}
-      title={view === "active" ? "Show completed tasks" : "Show active tasks"}
-      aria-pressed={view === "completed"}
-      aria-label={
-        view === "active" ? "Show completed tasks" : "Show active tasks"
-      }
-    >
-      <CheckCircle2
-        className="w-5 h-5"
-        strokeWidth={view === "completed" ? 2.75 : 2}
-      />
-    </button>
+  const segmentBtn =
+    "tm-btn-ghost !px-2.5 md:!px-3 !py-2.5 md:!py-3 rounded-lg shrink-0";
+
+  const surfaceToggle = (
+    <div className="inline-flex rounded-xl border border-neutral-200 dark:border-neutral-700 p-0.5 gap-0.5 bg-neutral-100/70 dark:bg-neutral-900/50">
+      <button
+        type="button"
+        onClick={() => onChangeSurface("tasks")}
+        className={cx(
+          segmentBtn,
+          "inline-flex items-center gap-1",
+          surface === "tasks"
+            ? "bg-white dark:bg-neutral-800 shadow-sm font-semibold text-neutral-900 dark:text-white"
+            : "text-neutral-500 dark:text-neutral-400",
+        )}
+        aria-pressed={surface === "tasks"}
+        aria-label="Tasks"
+        title="Tasks"
+      >
+        <LayoutDashboard className="w-5 h-5" aria-hidden />
+        <span className="hidden sm:inline ml-1">Tasks</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onChangeSurface("notes")}
+        className={cx(
+          segmentBtn,
+          "inline-flex items-center gap-1",
+          surface === "notes"
+            ? "bg-white dark:bg-neutral-800 shadow-sm font-semibold text-neutral-900 dark:text-white"
+            : "text-neutral-500 dark:text-neutral-400",
+        )}
+        aria-pressed={surface === "notes"}
+        aria-label="Notes"
+        title="Notes"
+      >
+        <StickyNote className="w-5 h-5" aria-hidden />
+        <span className="hidden sm:inline ml-1">Notes</span>
+      </button>
+    </div>
   );
+
+  const renderCompletedToggle =
+    surface === "tasks"
+      ? () => (
+          <button
+            type="button"
+            onClick={() => onChangeView(view === "active" ? "completed" : "active")}
+            className={cx(
+              toolbarIconBtn,
+              view === "completed" &&
+                "!bg-neutral-200/90 dark:!bg-neutral-800 text-green-600 dark:text-green-400",
+            )}
+            title={view === "active" ? "Show completed tasks" : "Show active tasks"}
+            aria-pressed={view === "completed"}
+            aria-label={
+              view === "active" ? "Show completed tasks" : "Show active tasks"
+            }
+          >
+            <CheckCircle2
+              className="w-5 h-5"
+              strokeWidth={view === "completed" ? 2.75 : 2}
+            />
+          </button>
+        )
+      : null;
 
   return (
     <header className="sticky top-0 z-30 bg-white/85 dark:bg-neutral-950/85 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
@@ -188,8 +239,9 @@ export function Header({
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-1 flex-shrink-0">
-            {renderViewToggle()}
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+            {surfaceToggle}
+            {renderCompletedToggle?.()}
             {isAdmin && onManageUsers && (
               <button
                 onClick={onManageUsers}
@@ -261,8 +313,9 @@ export function Header({
             </button>
           </div>
 
-          <div className="flex md:hidden items-center gap-0.5 flex-shrink-0">
-            {renderViewToggle()}
+          <div className="flex md:hidden items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+            {surfaceToggle}
+            {renderCompletedToggle?.()}
             <button
               type="button"
               className={cx(
@@ -325,13 +378,17 @@ export function Header({
               <input
                 type="search"
                 enterKeyHint="search"
-                placeholder="Search tasks..."
+                placeholder={
+                  surface === "notes"
+                    ? "Search notes..."
+                    : "Search tasks..."
+                }
                 value={search}
                 onChange={(e) => onChangeSearch(e.target.value)}
                 className="tm-input pl-12 !py-3 text-base"
               />
             </div>
-            {canManageCategories && (
+            {surface === "tasks" && canManageCategories && (
               <button
                 onClick={onAddCategory}
                 className="tm-btn-primary !px-5 !py-3 flex-shrink-0"
@@ -385,13 +442,17 @@ export function Header({
                   id="tm-mobile-search"
                   type="search"
                   enterKeyHint="search"
-                  placeholder="Search tasks..."
+                  placeholder={
+                    surface === "notes"
+                      ? "Search notes..."
+                      : "Search tasks..."
+                  }
                   value={search}
                   onChange={(e) => onChangeSearch(e.target.value)}
                   className="tm-input pl-10 !py-2.5 text-[15px]"
                 />
               </div>
-              {canManageCategories && (
+              {surface === "tasks" && canManageCategories && (
                 <button
                   type="button"
                   onClick={() => {

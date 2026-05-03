@@ -34,6 +34,14 @@ export interface Task {
   subtasks: Subtask[];
 }
 
+export interface Note {
+  id: string;
+  user_id: string;
+  title: string;
+  body_html: string;
+  updated_at: string;
+}
+
 export interface AppData {
   categories: Category[];
   tasks: Task[];

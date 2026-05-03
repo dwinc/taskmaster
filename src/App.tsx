@@ -27,7 +27,10 @@ import { CompletedView } from "./components/CompletedView";
 import { TaskModal } from "./components/TaskModal";
 import { CategoryModal } from "./components/CategoryModal";
 import { UserManagementModal } from "./components/UserManagementModal";
-import type { Category, Task } from "./types";
+import { NotesView } from "./components/NotesView";
+import { NoteModal } from "./components/NoteModal";
+import { NotesProvider, useNotes } from "./context/NotesContext";
+import type { Category, Task, Note } from "./types";
 
 function AppShell() {
   const { authReady, session, user } = useAuth();
@@ -43,15 +46,28 @@ function AppShell() {
   }
   return (
     <DataProvider>
-      <MainView />
+      <NotesProvider>
+        <MainView />
+      </NotesProvider>
     </DataProvider>
   );
 }
 
 function MainView() {
   const { isAdmin, allowedCategoryIds } = useAuth();
-  const { categories, tasks, loading, reorderCategories } = useData();
+  const {
+    categories,
+    tasks,
+    loading,
+    reorderCategories,
+  } = useData();
+  const { notes: userNotes, loading: notesLoading, error: notesError, upsertNote, deleteNote } =
+    useNotes();
   const [view, setView] = useState<"active" | "completed">("active");
+  const [surface, setSurface] = useState<"tasks" | "notes">("tasks");
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [noteDraftNonce, setNoteDraftNonce] = useState(0);
   const [search, setSearch] = useState("");
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -80,6 +96,17 @@ function MainView() {
   const openEditCategory = (c: Category) => {
     setEditingCategory(c);
     setCategoryModalOpen(true);
+  };
+
+  const openNewNote = () => {
+    setEditingNote(null);
+    setNoteDraftNonce((n) => n + 1);
+    setNoteModalOpen(true);
+  };
+
+  const openEditNote = (n: Note) => {
+    setEditingNote(n);
+    setNoteModalOpen(true);
   };
 
   const filterTasks = (list: Task[]): Task[] => {
@@ -150,6 +177,11 @@ function MainView() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <Header
+        surface={surface}
+        onChangeSurface={(s) => {
+          setSurface(s);
+          setSearch("");
+        }}
         view={view}
         onChangeView={setView}
         search={search}
@@ -160,7 +192,15 @@ function MainView() {
       />
 
       <main className="mx-auto max-w-4xl px-5 py-6 pb-32">
-        {loading ? (
+        {surface === "notes" ? (
+          <NotesView
+            notes={userNotes}
+            search={search}
+            loading={notesLoading}
+            error={notesError}
+            onOpenNote={openEditNote}
+          />
+        ) : loading ? (
           <div className="text-center py-20 text-neutral-400 dark:text-neutral-600">
             Loading…
           </div>
@@ -227,17 +267,40 @@ function MainView() {
         )}
       </main>
 
-      {/* Floating add button for tasks */}
-      {view === "active" && visibleCategories.length > 0 && (
+      {/* Floating action: notes → add note; tasks → add task */}
+      {surface === "notes" ? (
         <button
-          onClick={() => openNewTask()}
+          onClick={() => openNewNote()}
           className="fixed bottom-6 right-6 z-20 tm-btn-primary !rounded-full !w-16 !h-16 !p-0 shadow-lg"
-          title="New task"
-          aria-label="New task"
+          title="New note"
+          aria-label="New note"
         >
           <Plus className="w-7 h-7" strokeWidth={2.5} />
         </button>
+      ) : (
+        view === "active" &&
+        visibleCategories.length > 0 && (
+          <button
+            onClick={() => openNewTask()}
+            className="fixed bottom-6 right-6 z-20 tm-btn-primary !rounded-full !w-16 !h-16 !p-0 shadow-lg"
+            title="New task"
+            aria-label="New task"
+          >
+            <Plus className="w-7 h-7" strokeWidth={2.5} />
+          </button>
+        )
       )}
+
+      <NoteModal
+        open={noteModalOpen}
+        draftKey={noteDraftNonce}
+        onClose={() => setNoteModalOpen(false)}
+        note={editingNote}
+        onSave={async ({ id, title, body_html }) =>
+          upsertNote({ id, title, body_html })
+        }
+        onDelete={deleteNote}
+      />
 
       <TaskModal
         open={taskModalOpen}
