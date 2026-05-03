@@ -24,6 +24,10 @@ export interface Task {
   status: TaskStatus;
   deadline: string | null; // ISO timestamp
   position: number;
+  /** Pinned to the Today list (active tasks you plan to finish today). */
+  on_today: boolean;
+  /** Order within Today; meaningful when on_today is true. */
+  today_position: number;
   user_name: string;
   /** Set by DB trigger; used for admin push when a member creates a task. */
   created_by?: string | null;

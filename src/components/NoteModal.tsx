@@ -91,7 +91,7 @@ export function NoteModal({
   const bodyInitial = note?.body_html ?? "";
 
   return (
-    <Modal open={open} onClose={onClose} title={note ? "Edit note" : "New note"} maxWidth="max-w-lg">
+    <Modal open={open} onClose={onClose} title={note ? "Edit note" : "New note"} maxWidth="max-w-4xl">
       <div className="px-6 py-5 space-y-4">
         <div>
           <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wide">

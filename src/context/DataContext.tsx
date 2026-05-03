@@ -69,12 +69,17 @@ interface DataValue {
         | "position"
         | "tags"
         | "subtasks"
+        | "on_today"
+        | "today_position"
       >
     >,
   ) => void;
   deleteTask: (id: string) => void;
   toggleTaskDone: (id: string) => void;
   reorderTasks: (categoryId: string, idsInOrder: string[]) => void;
+  /** Add or remove a task from the Today list (active tasks only). */
+  setTaskToday: (id: string, onToday: boolean) => void;
+  reorderTodayTasks: (idsInOrder: string[]) => void;
 
   forceSync: () => Promise<void>;
 }
@@ -294,6 +299,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: "not_done",
         deadline: input.deadline ?? null,
         position: existingInCat.length,
+        on_today: false,
+        today_position: 0,
         user_name: taskOwnerName,
         created_at: now(),
         updated_at: now(),
@@ -323,13 +330,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         const tasks = d.tasks.map((t) => {
           if (t.id !== id) return t;
+          const nextStatus = patch.status ?? t.status;
           const next: Task = {
             ...t,
             ...patch,
             updated_at: now(),
           };
           if (patch.status) {
-            next.completed_at = patch.status === "done" ? now() : null;
+            next.completed_at = nextStatus === "done" ? now() : null;
+            if (nextStatus === "done") {
+              next.on_today = false;
+              next.today_position = 0;
+            }
           }
           return next;
         });
@@ -384,6 +396,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             status: nextStatus,
             completed_at: nextStatus === "done" ? now() : null,
             updated_at: now(),
+            ...(nextStatus === "done"
+              ? { on_today: false, today_position: 0 }
+              : {}),
           };
           return next;
         });
@@ -415,6 +430,119 @@ export function DataProvider({ children }: { children: ReactNode }) {
           trackWrite(upsertTaskRemote(updated));
         });
         return { ...d, tasks: Array.from(byId.values()) };
+      });
+    },
+    [allowedCategoryIds, trackWrite],
+  );
+
+  const setTaskToday: DataValue["setTaskToday"] = useCallback(
+    (id, onToday) => {
+      setData((d) => {
+        const prevMap = new Map(d.tasks.map((t) => [t.id, t]));
+        const target = prevMap.get(id);
+        if (!target) return d;
+        if (
+          allowedCategoryIds &&
+          !allowedCategoryIds.has(target.category_id)
+        ) {
+          return d;
+        }
+        if (target.status === "done") return d;
+
+        let tasks: Task[];
+        if (onToday) {
+          const maxPos = d.tasks.reduce((m, t) => {
+            if (t.on_today && t.status !== "done") {
+              return Math.max(m, t.today_position);
+            }
+            return m;
+          }, -1);
+          tasks = d.tasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  on_today: true,
+                  today_position: maxPos + 1,
+                  updated_at: now(),
+                }
+              : t,
+          );
+        } else {
+          tasks = d.tasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  on_today: false,
+                  today_position: 0,
+                  updated_at: now(),
+                }
+              : t,
+          );
+          const stillOn = tasks.filter(
+            (t) => t.on_today && t.status !== "done",
+          );
+          const sorted = [...stillOn].sort((a, b) =>
+            a.today_position !== b.today_position
+              ? a.today_position - b.today_position
+              : a.created_at.localeCompare(b.created_at),
+          );
+          const order = new Map(sorted.map((t, i) => [t.id, i]));
+          tasks = tasks.map((t) => {
+            if (!t.on_today || t.status === "done") return t;
+            const p = order.get(t.id) ?? 0;
+            if (t.today_position === p) return t;
+            return { ...t, today_position: p, updated_at: now() };
+          });
+        }
+
+        for (const t of tasks) {
+          const p = prevMap.get(t.id);
+          if (
+            !p ||
+            p.on_today !== t.on_today ||
+            p.today_position !== t.today_position ||
+            p.updated_at !== t.updated_at
+          ) {
+            trackWrite(upsertTaskRemote(t));
+          }
+        }
+        return { ...d, tasks };
+      });
+    },
+    [allowedCategoryIds, trackWrite],
+  );
+
+  const reorderTodayTasks: DataValue["reorderTodayTasks"] = useCallback(
+    (idsInOrder) => {
+      setData((d) => {
+        const prevMap = new Map(d.tasks.map((t) => [t.id, t]));
+        const idSet = new Set(idsInOrder);
+        const tasks = d.tasks.map((t) => {
+          if (!idSet.has(t.id)) return t;
+          const prev = prevMap.get(t.id);
+          if (!prev?.on_today || prev.status === "done") return t;
+          if (
+            allowedCategoryIds &&
+            !allowedCategoryIds.has(prev.category_id)
+          ) {
+            return t;
+          }
+          const idx = idsInOrder.indexOf(t.id);
+          if (idx < 0) return t;
+          if (t.today_position === idx) return t;
+          return { ...t, today_position: idx, updated_at: now() };
+        });
+        for (const t of tasks) {
+          const p = prevMap.get(t.id);
+          if (
+            !p ||
+            p.today_position !== t.today_position ||
+            p.updated_at !== t.updated_at
+          ) {
+            trackWrite(upsertTaskRemote(t));
+          }
+        }
+        return { ...d, tasks };
       });
     },
     [allowedCategoryIds, trackWrite],
@@ -453,6 +581,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteTask,
       toggleTaskDone,
       reorderTasks,
+      setTaskToday,
+      reorderTodayTasks,
       forceSync,
     }),
     [
@@ -470,6 +600,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteTask,
       toggleTaskDone,
       reorderTasks,
+      setTaskToday,
+      reorderTodayTasks,
       forceSync,
     ],
   );

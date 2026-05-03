@@ -86,7 +86,7 @@ export const MinimalRichEditor = forwardRef<MinimalRichEditorHandle, Props>(
             document.execCommand("insertText", false, text);
           }}
           className={cx(
-            "tm-note-editor px-4 py-3 min-h-[200px] max-h-[50vh] overflow-y-auto text-base",
+            "tm-note-editor px-4 py-3 min-h-[min(22rem,48vh)] sm:min-h-[min(26rem,52vh)] max-h-[min(70vh,calc(100vh-14rem))] md:max-h-[min(72vh,calc(90vh-12rem))] overflow-y-auto text-base",
             "text-neutral-900 dark:text-neutral-100 outline-none leading-relaxed",
           )}
         />

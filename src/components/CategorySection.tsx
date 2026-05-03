@@ -48,7 +48,7 @@ export function CategorySection({
   dragHandleProps,
   dragging,
 }: Props) {
-  const { reorderTasks, toggleTaskDone } = useData();
+  const { reorderTasks, toggleTaskDone, setTaskToday } = useData();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const sensors = useSensors(
@@ -189,6 +189,15 @@ export function CategorySection({
                   categoryColor={category.color}
                   onToggleDone={() => toggleTaskDone(task.id)}
                   onOpen={() => onOpenTask(task)}
+                  todayToggle={
+                    task.status !== "done"
+                      ? {
+                          isOnToday: task.on_today,
+                          onToggle: () =>
+                            setTaskToday(task.id, !task.on_today),
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </div>

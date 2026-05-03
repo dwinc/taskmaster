@@ -43,11 +43,16 @@ alter table public.tasks
   add column if not exists tags text[] not null default '{}';
 alter table public.tasks
   add column if not exists subtasks jsonb not null default '[]'::jsonb;
+alter table public.tasks
+  add column if not exists on_today boolean not null default false;
+alter table public.tasks
+  add column if not exists today_position integer not null default 0;
 
 create index if not exists tasks_category_idx on public.tasks (category_id);
 create index if not exists tasks_status_idx on public.tasks (status);
 create index if not exists tasks_deadline_idx on public.tasks (deadline);
 create index if not exists tasks_user_idx on public.tasks (user_name);
+create index if not exists tasks_on_today_idx on public.tasks (on_today) where on_today = true;
 
 -- ---------- RLS ----------
 alter table public.categories enable row level security;

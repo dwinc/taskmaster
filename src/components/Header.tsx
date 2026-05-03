@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   Bell,
   BellOff,
+  CalendarCheck2,
   CheckCircle2,
   LayoutDashboard,
   LogOut,
@@ -36,8 +37,8 @@ import { cx } from "../lib/utils";
 interface Props {
   surface: "tasks" | "notes";
   onChangeSurface: (s: "tasks" | "notes") => void;
-  view: "active" | "completed";
-  onChangeView: (v: "active" | "completed") => void;
+  view: "active" | "today" | "completed";
+  onChangeView: (v: "active" | "today" | "completed") => void;
   search: string;
   onChangeSearch: (s: string) => void;
   onAddCategory: () => void;
@@ -192,21 +193,52 @@ export function Header({
       ? () => (
           <button
             type="button"
-            onClick={() => onChangeView(view === "active" ? "completed" : "active")}
+            onClick={() =>
+              onChangeView(view === "completed" ? "active" : "completed")
+            }
             className={cx(
               toolbarIconBtn,
               view === "completed" &&
                 "!bg-neutral-200/90 dark:!bg-neutral-800 text-green-600 dark:text-green-400",
             )}
-            title={view === "active" ? "Show completed tasks" : "Show active tasks"}
+            title={
+              view === "completed"
+                ? "Show active tasks"
+                : "Show completed tasks"
+            }
             aria-pressed={view === "completed"}
             aria-label={
-              view === "active" ? "Show completed tasks" : "Show active tasks"
+              view === "completed"
+                ? "Show active tasks"
+                : "Show completed tasks"
             }
           >
             <CheckCircle2
               className="w-5 h-5"
               strokeWidth={view === "completed" ? 2.75 : 2}
+            />
+          </button>
+        )
+      : null;
+
+  const renderTodayToggle =
+    surface === "tasks"
+      ? () => (
+          <button
+            type="button"
+            onClick={() => onChangeView(view === "today" ? "active" : "today")}
+            className={cx(
+              toolbarIconBtn,
+              view === "today" &&
+                "!bg-neutral-200/90 dark:!bg-neutral-800 text-green-600 dark:text-green-400",
+            )}
+            title={view === "today" ? "Show all tasks" : "Today list"}
+            aria-pressed={view === "today"}
+            aria-label={view === "today" ? "Show all tasks" : "Today list"}
+          >
+            <CalendarCheck2
+              className="w-5 h-5"
+              strokeWidth={view === "today" ? 2.75 : 2}
             />
           </button>
         )
@@ -241,6 +273,7 @@ export function Header({
 
           <div className="hidden md:flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
             {surfaceToggle}
+            {renderTodayToggle?.()}
             {renderCompletedToggle?.()}
             {isAdmin && onManageUsers && (
               <button
@@ -315,6 +348,7 @@ export function Header({
 
           <div className="flex md:hidden items-center gap-1 flex-shrink-0 flex-wrap justify-end">
             {surfaceToggle}
+            {renderTodayToggle?.()}
             {renderCompletedToggle?.()}
             <button
               type="button"
@@ -381,7 +415,9 @@ export function Header({
                 placeholder={
                   surface === "notes"
                     ? "Search notes..."
-                    : "Search tasks..."
+                    : view === "today"
+                      ? "Search today's tasks..."
+                      : "Search tasks..."
                 }
                 value={search}
                 onChange={(e) => onChangeSearch(e.target.value)}
@@ -445,7 +481,9 @@ export function Header({
                   placeholder={
                     surface === "notes"
                       ? "Search notes..."
-                      : "Search tasks..."
+                      : view === "today"
+                        ? "Search today's tasks..."
+                        : "Search tasks..."
                   }
                   value={search}
                   onChange={(e) => onChangeSearch(e.target.value)}

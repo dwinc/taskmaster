@@ -1,5 +1,11 @@
 import { format, formatDistanceToNowStrict, isPast, isToday, isTomorrow } from "date-fns";
-import { AlertCircle, CalendarClock, GripVertical, ListChecks } from "lucide-react";
+import {
+  AlertCircle,
+  CalendarCheck2,
+  CalendarClock,
+  GripVertical,
+  ListChecks,
+} from "lucide-react";
 import type { Task } from "../types";
 import { cx, hexAlpha, tagColor } from "../lib/utils";
 import { STATUS_META } from "../lib/constants";
@@ -9,6 +15,8 @@ interface Props {
   categoryColor: string;
   onToggleDone: () => void;
   onOpen: () => void;
+  /** When set, shows add/remove Today control (hidden for completed tasks). */
+  todayToggle?: { isOnToday: boolean; onToggle: () => void };
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
   dragging?: boolean;
 }
@@ -25,6 +33,7 @@ export function TaskCard({
   categoryColor,
   onToggleDone,
   onOpen,
+  todayToggle,
   dragHandleProps,
   dragging,
 }: Props) {
@@ -159,6 +168,30 @@ export function TaskCard({
           )}
         </div>
       </div>
+
+      {todayToggle && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            todayToggle.onToggle();
+          }}
+          className={cx(
+            "tm-btn-ghost flex-shrink-0 !p-2 rounded-xl touch-manipulation",
+            todayToggle.isOnToday &&
+              "text-green-600 dark:text-green-400 bg-green-500/10",
+          )}
+          title={
+            todayToggle.isOnToday ? "Remove from Today" : "Add to Today"
+          }
+          aria-pressed={todayToggle.isOnToday}
+          aria-label={
+            todayToggle.isOnToday ? "Remove from Today" : "Add to Today"
+          }
+        >
+          <CalendarCheck2 className="w-5 h-5" strokeWidth={2} />
+        </button>
+      )}
 
       <button
         type="button"

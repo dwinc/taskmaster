@@ -24,6 +24,7 @@ import { Header } from "./components/Header";
 import { CategorySection } from "./components/CategorySection";
 import { SortableCategorySection } from "./components/SortableCategorySection";
 import { CompletedView } from "./components/CompletedView";
+import { TodayView } from "./components/TodayView";
 import { TaskModal } from "./components/TaskModal";
 import { CategoryModal } from "./components/CategoryModal";
 import { UserManagementModal } from "./components/UserManagementModal";
@@ -63,7 +64,7 @@ function MainView() {
   } = useData();
   const { notes: userNotes, loading: notesLoading, error: notesError, upsertNote, deleteNote } =
     useNotes();
-  const [view, setView] = useState<"active" | "completed">("active");
+  const [view, setView] = useState<"active" | "today" | "completed">("active");
   const [surface, setSurface] = useState<"tasks" | "notes">("tasks");
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -174,6 +175,14 @@ function MainView() {
     [tasksVisible, search],
   );
 
+  const todayTasks = useMemo(() => {
+    const base = tasksVisible.filter(
+      (t) => t.on_today && t.status !== "done",
+    );
+    return filterTasks(base);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasksVisible, search]);
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <Header
@@ -212,6 +221,8 @@ function MainView() {
           ) : (
             <NoAccessEmptyState />
           )
+        ) : view === "today" ? (
+          <TodayView tasks={todayTasks} onOpenTask={openEditTask} />
         ) : search.trim() ? (
           // Searching: hide empty categories, no drag reordering (filtered view).
           visibleCategories.map((c) => {
@@ -278,7 +289,7 @@ function MainView() {
           <Plus className="w-7 h-7" strokeWidth={2.5} />
         </button>
       ) : (
-        view === "active" &&
+        view !== "completed" &&
         visibleCategories.length > 0 && (
           <button
             onClick={() => openNewTask()}

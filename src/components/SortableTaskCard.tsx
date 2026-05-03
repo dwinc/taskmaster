@@ -8,6 +8,7 @@ interface Props {
   categoryColor: string;
   onToggleDone: () => void;
   onOpen: () => void;
+  todayToggle?: { isOnToday: boolean; onToggle: () => void };
 }
 
 export function SortableTaskCard(props: Props) {

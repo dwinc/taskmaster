@@ -6,8 +6,12 @@ import * as outbox from "./outbox";
 const EMPTY: AppData = { categories: [], tasks: [] };
 
 function normalizeTask(t: Task): Task {
+  const raw = t as Task & { on_today?: boolean; today_position?: number };
   return {
     ...t,
+    on_today: !!raw.on_today,
+    today_position:
+      typeof raw.today_position === "number" ? raw.today_position : 0,
     tags: Array.isArray(t.tags) ? t.tags : [],
     subtasks: Array.isArray(t.subtasks) ? t.subtasks : [],
   };
